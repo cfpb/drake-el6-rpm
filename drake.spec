@@ -1,7 +1,8 @@
 ############################
 # Set global SPEC variables
 ############################
-%global _version 1.0.1
+#%global _version 1.0.1
+%global _version 1.0.2
 
 
 ###############
@@ -14,9 +15,9 @@ Summary: Drake is a simple-to-use, extensible, text-based data workflow tool tha
 Group: Development/Tools
 License: Eclipse Public License
 URL: http://https://github.com/Factual/drake
-Source1: drake
+#Source: drake
 Obsoletes: drake <= 1.0.1
-Provides: drake = 1.0.1
+Provides: drake = 1.0.2
 
 %description
 Drake is a simple-to-use, extensible, text-based data workflow tool that organizes command execution around data and its dependencies
@@ -35,8 +36,9 @@ BuildRequires: java
 # code base.  -n defines the name of the directory
 # to be Python-2.7 instead of the default, drake27-alt
 ########################################################
-%prep
-%setup 
+#%prep
+#wget -O https://raw.githubusercontent.com/Factual/drake/1.0.1/bin/drake
+#%setup 
 
 
 ###########################################################
@@ -47,9 +49,21 @@ BuildRequires: java
 ###########################################################
 %build
 
+git clone https://github.com/Factual/drake
+
+pushd drake
+#     git checkout tags/1.0.1 -b 1.0.1
+     git checkout develop -b 1.0.2
+popd
+
+export DRAKE_HOME=drake
+
+set +e
+drake/bin/drake
+set -e
+
 # Convenience variable pointing to the directory used for
 # PATH's
-topdir=$(pwd)
 
 # Configuring for make, prefix sets the install to /usr/local or
 # whatever the setting is.  Enable unicode enables unicode support,
@@ -60,17 +74,27 @@ topdir=$(pwd)
 
 
 ###########################################################
+
+
+###########################################################
 # INSTALL
 # This directive is where the code is actually installed
 # in the %{buildroot} folder in preparation for packaging.
 ###########################################################
 %install
 
-mkdir -p %{buildroot}/usr/bin
-cp drake %{buildroot}/usr/bin/
-chmod 0755 %{buildroot}/usr/bin/drake
-%{buildroot}/usr/bin/drake
 
+mkdir -p %{buildroot}/usr/bin
+mkdir -p %{buildroot}/usr/lib/drake
+mkdir -p %{buildroot}/etc/profile.d
+
+cat drake/bin/drake-pkg | sed 's/DRAKE_JAR/$DRAKE_JAR/g' | tee %{buildroot}/usr/bin/drake
+
+cp drake/target/drake.jar %{buildroot}/usr/lib/drake/
+
+echo "export DRAKE_JAR=/usr/lib/drake/drake.jar" | tee %{buildroot}/etc/profile.d/drake.sh
+source %{buildroot}/etc/profile.d/drake.sh
+chmod 755 %{buildroot}/usr/bin/drake
 
 ###########################################################
 # CLEAN
@@ -89,5 +113,8 @@ chmod 0755 %{buildroot}/usr/bin/drake
 ##############################################################
 %files
 %defattr(-,root,root,-)
+/usr/bin/drake
+/usr/lib/drake/drake.jar
+/etc/profile.d/drake.sh
 
 %changelog ] ]
